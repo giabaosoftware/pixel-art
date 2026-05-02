@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alien Geometry Engine v8 - The Aesthetic Update (8K Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .canvas-area {
+            background: #111;
+            background-image: radial-gradient(#222 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: auto;
+            position: relative;
+        }
+        canvas {
+            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            max-width: 100%;
+            height: auto !important;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+        .control-panel {
+            background: rgba(15, 15, 15, 0.95);
+            border: 1px solid #222;
+        }
+        input[type="range"] {
+            height: 4px;
+            -webkit-appearance: none;
+            background: #333;
+            border-radius: 2px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+        select {
+            background: #111;
+            border: 1px solid #333;
+            color: white;
+            font-size: 11px;
+            padding: 6px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        optgroup {
+            color: #4ade80;
+            font-style: normal;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        optgroup[label*="THẨM MỸ"] {
+            color: #c084fc; 
+        }
+        option {
+            color: #fff;
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
+        
+        <!-- SIDEBAR CONTROLS -->
+        <div class="lg:col-span-1 space-y-6 control-panel p-6 rounded-xl">
+            <div>
+                <h2 class="text-3xl font-black tracking-tighter mb-1 uppercase text-emerald-400">Alien Engine <span class="text-purple-400 text-xl">V8</span></h2>
+                <p class="text-[10px] uppercase tracking-[0.2em] text-gray-400 mb-6 border-b border-gray-800 pb-4">The Aesthetic Upgrade (8K Support)</p>
+            </div>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-[10px] uppercase tracking-widest text-emerald-500 font-bold mb-2">Ảnh đầu vào</label>
+                    <input type="file" id="imageInput" accept="image/*" class="text-xs w-full file:bg-emerald-600 file:text-white file:border-0 file:px-3 file:py-2 file:rounded file:mr-3 file:cursor-pointer hover:file:bg-emerald-500 transition-all text-gray-400">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] uppercase tracking-widest text-emerald-500 font-bold mb-2">Dạng thức nghệ thuật</label>
+                    <select id="shapeType" class="w-full focus:ring-1 focus:ring-emerald-500 outline-none transition-all">
+                        
+                        <optgroup label="🎨 HỆ THỐNG THẨM MỸ (V8)">
+                            <option value="ascii">🔠 Ký Tự Nguyên Khối (ASCII Matrix)</option>
+                            <option value="spiral">🌀 Xoắn Ốc Không Gian (Halftone Spiral)</option>
+                        </optgroup>
+
+                        <optgroup label="🌐 Mạng Lưới (Continuous)">
+                            <option value="plexus">Mạng Lưới Thần Kinh (Plexus)</option>
+                            <option value="zigzag">Nét Phác Thảo Liên Tục (Zigzag)</option>
+                            <option value="constellation">Chòm Sao (Constellation)</option>
+                        </optgroup>
+                        
+                        <optgroup label="⚛️ Điểm Hạt (Discrete)">
+                            <option value="binary">🖋️ Đóng Dấu Chữ Ký (Image Stamp)</option>
+                            <option value="glitch">Nhiễu Sóng Mã Vạch (Glitch)</option>
+                            <option value="dot">Chấm Đơn (Stippling)</option>
+                            <option value="organic">Sợi Hữu Cơ (Organic)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div id="signatureContainer" class="hidden pt-2 border-t border-gray-800">
+                    <label class="block text-[10px] uppercase tracking-widest text-yellow-400 mb-2">Tải ảnh Chữ Ký (Nền trắng/sáng)</label>
+                    <input type="file" id="sigImageInput" accept="image/*" class="text-xs w-full file:bg-[#333] file:text-white file:border-0 file:px-3 file:py-1 file:rounded file:mr-3 file:cursor-pointer text-gray-400">
+                    <p class="text-[8px] text-gray-500 mt-1">*Hệ thống tự động lọc nền, trích nét đen đặc để đóng dấu.</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="text-[10px] uppercase tracking-widest text-gray-300">Số lượng điểm / Nét</label>
+                        <span id="dotCountVal" class="text-xs font-mono text-emerald-400">25,000</span>
+                    </div>
+                    <input type="range" id="dotCount" min="1000" max="150000" step="1000" value="25000" class="w-full">
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label id="sizeLabel" class="text-[10px] uppercase tracking-widest text-gray-300">Độ dày / Kích thước</label>
+                        <span id="dotSizeVal" class="text-xs font-mono text-emerald-400">4.0</span>
+                    </div>
+                    <input type="range" id="dotSize" min="0.5" max="40" step="0.5" value="4.0" class="w-full">
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="text-[10px] uppercase tracking-widest text-gray-300">Độ sâu tương phản</label>
+                        <span id="contrastVal" class="text-xs font-mono text-emerald-400">1.5</span>
+                    </div>
+                    <input type="range" id="contrast" min="0.1" max="5.0" step="0.1" value="1.5" class="w-full">
+                </div>
+
+                <div class="flex items-center space-x-3 pt-2">
+                    <input type="checkbox" id="circleMask" class="w-4 h-4 bg-black border-gray-700 rounded focus:ring-0 text-emerald-500">
+                    <label for="circleMask" class="text-[10px] uppercase tracking-widest cursor-pointer text-gray-400">Khóa Vòng tròn (Masking)</label>
+                </div>
+                
+                <div class="flex items-center space-x-3 pt-1">
+                    <input type="checkbox" id="invertColor" class="w-4 h-4 bg-black border-gray-700 rounded focus:ring-0 text-emerald-500">
+                    <label for="invertColor" class="text-[10px] uppercase tracking-widest cursor-pointer text-gray-400">Đảo ngược Nền (Dark Mode)</label>
+                </div>
+
+                <!-- CÔNG TẮC 8K MỚI THÊM VÀO -->
+                <div class="pt-4 border-t border-gray-800">
+                    <div class="flex items-start space-x-3 bg-purple-900/20 p-3 rounded border border-purple-500/30 transition hover:bg-purple-900/30">
+                        <input type="checkbox" id="enable8K" class="w-4 h-4 mt-0.5 bg-black border-purple-500 rounded focus:ring-0 text-purple-500 cursor-pointer">
+                        <label for="enable8K" class="text-[10px] uppercase tracking-widest cursor-pointer text-purple-300 font-bold leading-tight">
+                            🔥 Render chất lượng 8K UHD
+                            <span class="block text-[8px] text-gray-400 mt-1 font-normal normal-case tracking-normal">*Xuất file nét căng 7680px. Tốn tài nguyên, vui lòng kiên nhẫn khi máy xử lý.</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="pt-4 space-y-2">
+                    <button id="processBtn" class="w-full bg-purple-600 text-white py-3 rounded text-[11px] font-bold tracking-[0.2em] uppercase hover:bg-purple-500 transition-all disabled:opacity-50 shadow-[0_0_15px_rgba(192,132,252,0.3)] hover:shadow-[0_0_25px_rgba(192,132,252,0.5)]">
+                        Kiến Tạo Nghệ Thuật
+                    </button>
+                    
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button id="downloadBtn" class="w-full border border-gray-700 text-gray-300 py-2.5 rounded text-[10px] font-bold tracking-[0.1em] uppercase hover:bg-white/10 hover:text-white transition-all col-span-2">
+                            Lưu Ảnh (.PNG)
+                        </button>
+                        <button id="downloadTxtBtn" class="hidden w-full bg-emerald-700/50 border border-emerald-500 text-white py-2.5 rounded text-[10px] font-bold tracking-[0.1em] uppercase hover:bg-emerald-600 transition-all col-span-2 mt-2">
+                            Xuất Mã Nguồn ASCII (.TXT)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div id="progressContainer" class="hidden space-y-2 pt-6">
+                <div class="flex justify-between text-[10px] uppercase tracking-widest text-purple-400">
+                    <span id="statusLabel">Đang tính toán...</span>
+                    <span id="progressText" class="font-mono">0%</span>
+                </div>
+                <div class="w-full bg-gray-900 h-1.5 rounded-full overflow-hidden border border-gray-800">
+                    <div id="progressBar" class="bg-purple-500 h-full w-0 transition-all duration-75 relative">
+                        <div class="absolute inset-0 bg-white/30 animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CANVAS DISPLAY -->
+        <div class="lg:col-span-3 space-y-4 flex flex-col">
+            <div class="canvas-area p-4 flex-grow" id="canvasWrapper">
+                <canvas id="mainCanvas"></canvas>
+            </div>
+            <div class="flex justify-between text-[10px] text-gray-500 uppercase tracking-[0.2em] font-mono">
+                <span id="resDisplay">Khởi tạo Engine V8...</span>
+                <span id="modeDisplay" class="text-purple-500/50">CHỜ DỮ LIỆU</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const imageInput = document.getElementById('imageInput');
+        const processBtn = document.getElementById('processBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadTxtBtn = document.getElementById('downloadTxtBtn');
+        const resDisplay = document.getElementById('resDisplay');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const statusLabel = document.getElementById('statusLabel');
+        const sizeLabel = document.getElementById('sizeLabel');
+        const modeDisplay = document.getElementById('modeDisplay');
+
+        const dotCountInput = document.getElementById('dotCount');
+        const dotSizeInput = document.getElementById('dotSize');
+        const contrastInput = document.getElementById('contrast');
+        const shapeTypeInput = document.getElementById('shapeType');
+        const invertColorInput = document.getElementById('invertColor');
+        const enable8KInput = document.getElementById('enable8K');
+        
+        const signatureContainer = document.getElementById('signatureContainer');
+        const sigImageInput = document.getElementById('sigImageInput');
+
+        let originalImg = null;
+        let sigCanvasBlack = null;
+        let sigCanvasWhite = null;
+        let isProcessing = false;
+        let globalAsciiText = ""; 
+        
+        const continuousModes = ['plexus', 'zigzag', 'constellation'];
+        const specialArtModes = ['ascii', 'spiral']; 
+
+        const bindSlider = (input, labelId) => {
+            input.addEventListener('input', () => {
+                document.getElementById(labelId).innerText = input.value;
+            });
+        };
+        bindSlider(dotCountInput, 'dotCountVal');
+        bindSlider(dotSizeInput, 'dotSizeVal');
+        bindSlider(contrastInput, 'contrastVal');
+
+        shapeTypeInput.addEventListener('change', () => {
+            const val = shapeTypeInput.value;
+            
+            if (val === 'binary') signatureContainer.classList.remove('hidden');
+            else signatureContainer.classList.add('hidden');
+
+            if (val === 'ascii') {
+                sizeLabel.innerText = "Kích thước Ký Tự";
+                downloadTxtBtn.classList.remove('hidden');
+                downloadBtn.classList.remove('col-span-2');
+            } else {
+                downloadTxtBtn.classList.add('hidden');
+                downloadBtn.classList.add('col-span-2');
+                if (val === 'binary') sizeLabel.innerText = "Kích thước Chữ ký";
+                else if (continuousModes.includes(val)) sizeLabel.innerText = "Bán kính nối";
+                else if (val === 'spiral') sizeLabel.innerText = "Khoảng cách vòng xoắn";
+                else sizeLabel.innerText = "Kích thước hình học";
+            }
+        });
+
+        shapeTypeInput.dispatchEvent(new Event('change'));
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImg = img;
+                    resDisplay.innerText = `Nguồn: ${img.naturalWidth} x ${img.naturalHeight} PX`;
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    
+                    ctx.fillStyle = invertColorInput.checked ? '#050505' : 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.globalAlpha = 0.15;
+                    ctx.drawImage(img, 0, 0);
+                    ctx.globalAlpha = 1.0;
+                    modeDisplay.innerText = "ĐÃ NẠP DỮ LIỆU. SẴN SÀNG.";
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        sigImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => extractSignature(img);
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function extractSignature(img) {
+            const temp = document.createElement('canvas');
+            temp.width = img.naturalWidth;
+            temp.height = img.naturalHeight;
+            const tc = temp.getContext('2d', { willReadFrequently: true });
+            tc.drawImage(img, 0, 0);
+            const data = tc.getImageData(0, 0, temp.width, temp.height);
+            const d = data.data;
+
+            let minX = temp.width, minY = temp.height, maxX = 0, maxY = 0;
+            const dataBlack = new ImageData(temp.width, temp.height);
+            const dataWhite = new ImageData(temp.width, temp.height);
+
+            for (let i = 0; i < d.length; i += 4) {
+                const r = d[i], g = d[i+1], b = d[i+2];
+                if (r < 200 && g < 200 && b < 200) { 
+                    dataBlack.data[i] = 0; dataBlack.data[i+1] = 0; dataBlack.data[i+2] = 0; dataBlack.data[i+3] = 255;
+                    dataWhite.data[i] = 255; dataWhite.data[i+1] = 255; dataWhite.data[i+2] = 255; dataWhite.data[i+3] = 255;
+                    
+                    const x = (i / 4) % temp.width;
+                    const y = Math.floor((i / 4) / temp.width);
+                    if (x < minX) minX = x;
+                    if (x > maxX) maxX = x;
+                    if (y < minY) minY = y;
+                    if (y > maxY) maxY = y;
+                }
+            }
+
+            if (minX > maxX || minY > maxY) {
+                alert("Không nhận diện được nét chữ ký. Hãy thử ảnh rõ hơn!");
+                return;
+            }
+
+            const w = maxX - minX + 1;
+            const h = maxY - minY + 1;
+
+            sigCanvasBlack = document.createElement('canvas');
+            sigCanvasBlack.width = w; sigCanvasBlack.height = h;
+            tc.putImageData(dataBlack, 0, 0);
+            sigCanvasBlack.getContext('2d').drawImage(temp, minX, minY, w, h, 0, 0, w, h);
+
+            sigCanvasWhite = document.createElement('canvas');
+            sigCanvasWhite.width = w; sigCanvasWhite.height = h;
+            tc.putImageData(dataWhite, 0, 0);
+            sigCanvasWhite.getContext('2d').drawImage(temp, minX, minY, w, h, 0, 0, w, h);
+
+            alert("Đã trích xuất nét chữ ký chuẩn xác!");
+        }
+
+        function drawShape(x, y, size, type, isDark) {
+            ctx.save();
+            ctx.translate(x, y);
+            const mainColor = isDark ? 'white' : 'black';
+            ctx.fillStyle = mainColor; ctx.strokeStyle = mainColor;
+
+            if (type !== 'glitch' && type !== 'binary') ctx.rotate(Math.random() * Math.PI);
+
+            switch(type) {
+                case 'binary':
+                    if (sigCanvasBlack && sigCanvasWhite) {
+                        const sigToDraw = isDark ? sigCanvasWhite : sigCanvasBlack;
+                        const aspect = sigToDraw.height / sigToDraw.width;
+                        const drawW = size * 5; 
+                        const drawH = drawW * aspect;
+                        ctx.rotate((Math.random() - 0.5) * 0.4);
+                        ctx.drawImage(sigToDraw, -drawW/2, -drawH/2, drawW, drawH);
+                    } else {
+                        ctx.font = `bold ${Math.max(2, size)}px 'Courier New', monospace`;
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.fillText(Math.random() > 0.5 ? "0" : "1", 0, 0); 
+                    }
+                    break;
+                case 'glitch':
+                    ctx.fillRect(-Math.max(1, size*0.2*Math.random())/2, -(size*(0.5+Math.random()*2))/2, Math.max(1, size*0.2*Math.random()), size*(0.5+Math.random()*2)); break;
+                case 'dot': ctx.beginPath(); ctx.arc(0, 0, size / 2, 0, Math.PI * 2); ctx.fill(); break;
+                case 'organic': ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(size/2, -size/2, size/2, size, size, size/2); ctx.lineWidth = Math.max(0.5, size/6); ctx.stroke(); break;
+            }
+            ctx.restore();
+        }
+
+        processBtn.addEventListener('click', async () => {
+            if (!originalImg || isProcessing) return;
+            startProcessing();
+        });
+
+        async function startProcessing() {
+            isProcessing = true;
+            processBtn.disabled = true;
+            progressContainer.classList.remove('hidden');
+            globalAsciiText = ""; 
+            
+            const count = parseInt(dotCountInput.value);
+            const size = parseFloat(dotSizeInput.value);
+            const contrast = parseFloat(contrastInput.value);
+            const shapeType = shapeTypeInput.value;
+            const isCircle = document.getElementById('circleMask').checked;
+            const isDark = invertColorInput.checked;
+            const is8K = enable8KInput.checked;
+
+            // Xử lý Tính toán Scale 8K
+            let w = originalImg.naturalWidth;
+            let h = originalImg.naturalHeight;
+            let scale = 1;
+
+            if (is8K) {
+                const TARGET_MAX = 7680;
+                scale = TARGET_MAX / Math.max(w, h);
+                w = Math.floor(w * scale);
+                h = Math.floor(h * scale);
+            }
+
+            // Tự động scale các thông số để giữ nguyên tỷ lệ nghệ thuật trên file độ phân giải lớn
+            const finalSize = size * scale;
+            // Scale mật độ hạt, giới hạn max 1.5 triệu điểm để tránh treo trình duyệt
+            const finalCount = is8K ? Math.min(Math.floor(count * scale * scale), 1500000) : count;
+
+            modeDisplay.innerText = `V8: ${shapeType.toUpperCase()} ${is8K ? '[8K UHD]' : ''}`;
+            resDisplay.innerText = `Độ phân giải: ${w} x ${h} PX`;
+            
+            canvas.width = w;
+            canvas.height = h;
+            canvas.style.backgroundColor = isDark ? '#050505' : 'white';
+
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = w; offCanvas.height = h;
+            const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+            offCtx.imageSmoothingEnabled = true;
+            offCtx.imageSmoothingQuality = 'high';
+            offCtx.drawImage(originalImg, 0, 0, w, h);
+            const imgData = offCtx.getImageData(0, 0, w, h).data;
+
+            ctx.fillStyle = isDark ? '#050505' : 'white';
+            ctx.fillRect(0, 0, w, h);
+
+            if (specialArtModes.includes(shapeType)) {
+                runSpecialArtModes(shapeType, w, h, imgData, finalSize, contrast, isDark, finalCount);
+                return; 
+            }
+
+            statusLabel.innerText = "Đang trích xuất không gian...";
+            const centerX = w / 2; const centerY = h / 2; const radiusLimit = Math.min(w, h) / 2;
+            let pointsDrawn = 0; const collectedPoints = []; const batchSize = 2500; 
+
+            const collectBatch = () => {
+                let batchCount = 0;
+                while (batchCount < batchSize && pointsDrawn < finalCount) {
+                    const rx = Math.random() * w; const ry = Math.random() * h;
+                    if (isCircle && Math.sqrt((rx - centerX)**2 + (ry - centerY)**2) > radiusLimit) continue;
+
+                    const px = Math.floor(rx); const py = Math.floor(ry);
+                    const idx = (py * w + px) * 4;
+                    const brightness = (imgData[idx]*0.299 + imgData[idx+1]*0.587 + imgData[idx+2]*0.114) / 255;
+                    const prob = Math.pow(1 - brightness, contrast);
+
+                    if (Math.random() < prob) {
+                        if (continuousModes.includes(shapeType)) collectedPoints.push({x: rx, y: ry, b: brightness});
+                        else drawShape(rx, ry, finalSize, shapeType, isDark);
+                        pointsDrawn++; batchCount++;
+                    }
+                }
+
+                updateProgress(pointsDrawn, finalCount, collectBatch);
+
+                if (pointsDrawn >= finalCount) {
+                    if (shapeType === 'plexus') renderPlexus(collectedPoints, finalSize, isDark);
+                    else if (shapeType === 'zigzag') renderZigzag(collectedPoints, finalSize, isDark);
+                    else if (shapeType === 'constellation') renderConstellation(collectedPoints, finalSize, isDark);
+                    else finishProcessing();
+                }
+            };
+            collectBatch();
+        }
+
+        function runSpecialArtModes(type, w, h, imgData, finalSize, contrast, isDark, finalCount) {
+            progressBar.style.width = '30%';
+            statusLabel.innerText = `Đang kết xuất Nghệ Thuật: ${type.toUpperCase()}...`;
+
+            setTimeout(() => {
+                if (type === 'ascii') renderAscii(w, h, imgData, finalSize, contrast, isDark);
+                else if (type === 'spiral') renderSpiral(w, h, imgData, finalSize, contrast, isDark);
+
+                progressBar.style.width = '100%';
+                progressText.innerText = '100%';
+                finishProcessing();
+            }, 100);
+        }
+
+        function renderAscii(w, h, imgData, size, contrast, isDark) {
+            const chars = ['@', '&', '#', '%', '8', 'S', '*', '+', '=', '-', ':', '.', ' '];
+            const fontSize = Math.max(6, Math.floor(size * 2)); 
+            const stepY = fontSize; 
+            const stepX = fontSize * 0.6;
+            
+            ctx.font = `bold ${fontSize}px 'Courier New', monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            globalAsciiText = ""; 
+
+            const cols = Math.floor(w / stepX);
+            const rows = Math.floor(h / stepY);
+
+            for(let r = 0; r < rows; r++) {
+                let rowText = "";
+                const y = r * stepY;
+                for(let c = 0; c < cols; c++) {
+                    const x = c * stepX;
+                    const sampleX = Math.floor(x + stepX/2);
+                    const sampleY = Math.floor(y + stepY/2);
+                    const idx = (sampleY * w + sampleX) * 4;
+                    const brightness = (imgData[idx]*0.299 + imgData[idx+1]*0.587 + imgData[idx+2]*0.114) / 255;
+                    
+                    let adjusted = Math.pow(brightness, 1/contrast);
+                    if (adjusted > 1) adjusted = 1;
+                    let charIdx = Math.floor(adjusted * chars.length);
+                    if(charIdx >= chars.length) charIdx = chars.length - 1;
+
+                    const charToDraw = chars[charIdx];
+                    rowText += charToDraw;
+
+                    ctx.fillStyle = isDark ? `rgba(255,255,255,${1 - adjusted + 0.2})` : `rgba(0,0,0,${1 - adjusted + 0.2})`;
+                    ctx.fillText(charToDraw, x + stepX/2, y + stepY/2);
+                }
+                globalAsciiText += rowText + "\r\n";
+            }
+        }
+
+        function renderSpiral(w, h, imgData, size, contrast, isDark) {
+            const centerX = w/2; const centerY = h/2;
+            const maxRadius = Math.max(w, h) / 2 * 1.5;
+            const spacing = Math.max(3, size * 1.5); 
+
+            ctx.strokeStyle = isDark ? 'white' : 'black';
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            
+            let prevX = centerX; let prevY = centerY;
+            let currentThickness = spacing * 0.5; 
+            const maxThick = spacing * 0.85; 
+            const minThick = Math.max(0.4, spacing * 0.08); 
+
+            let r = 0.1; let theta = 0;
+
+            while (r < maxRadius) {
+                let angleStep = Math.min(0.5, 2.0 / Math.max(1, r));
+                theta += angleStep;
+                r = (spacing * theta) / (2 * Math.PI);
+
+                let x = centerX + r * Math.cos(theta);
+                let y = centerY + r * Math.sin(theta);
+
+                if (x >= 0 && x < w && y >= 0 && y < h) {
+                    const px = Math.floor(x); const py = Math.floor(y);
+                    const idx = (py * w + px) * 4;
+                    const brightness = (imgData[idx]*0.299 + imgData[idx+1]*0.587 + imgData[idx+2]*0.114) / 255;
+                    const weight = Math.pow(1 - brightness, contrast);
+
+                    let targetThickness = minThick + (maxThick - minThick) * weight;
+                    currentThickness += (targetThickness - currentThickness) * 0.1;
+
+                    ctx.beginPath();
+                    ctx.moveTo(prevX, prevY);
+                    ctx.lineWidth = currentThickness;
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                }
+                prevX = x; prevY = y;
+            }
+        }
+
+        function renderPlexus(points, connectionRadius, isDark) {
+            statusLabel.innerText = "Đang dệt Mạng Lưới Thần Kinh...";
+            progressBar.style.width = '0%';
+            const maxDistSq = (connectionRadius * 3) * (connectionRadius * 3);
+            const cellSize = connectionRadius * 3;
+            const grid = buildGrid(points, cellSize);
+            ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.25)'; 
+            ctx.lineWidth = 0.5;
+
+            let i = 0; const batchSize = 300;
+            const drawNetBatch = () => {
+                const limit = Math.min(i + batchSize, points.length);
+                ctx.beginPath();
+                for(; i < limit; i++) {
+                    const p1 = points[i];
+                    const cx = Math.floor(p1.x / cellSize); const cy = Math.floor(p1.y / cellSize);
+                    let connections = 0;
+                    for(let nx = cx - 1; nx <= cx + 1; nx++) {
+                        for(let ny = cy - 1; ny <= cy + 1; ny++) {
+                            const neighbors = grid.get(nx + ',' + ny);
+                            if(!neighbors) continue;
+                            for(let j = 0; j < neighbors.length; j++) {
+                                const p2 = neighbors[j];
+                                if(p1 === p2) continue;
+                                if((p1.x - p2.x)**2 + (p1.y - p2.y)**2 < maxDistSq) {
+                                    ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                                    connections++;
+                                }
+                            }
+                            if(connections > 5) break;
+                        }
+                        if(connections > 5) break;
+                    }
+                }
+                ctx.stroke();
+                updateProgress(i, points.length, drawNetBatch);
+            }; drawNetBatch();
+        }
+
+        function renderConstellation(points, connectionRadius, isDark) {
+            statusLabel.innerText = "Đang kiến tạo Chòm Sao...";
+            progressBar.style.width = '0%';
+            const maxDistSq = (connectionRadius * 4) * (connectionRadius * 4);
+            const cellSize = connectionRadius * 4;
+            const grid = buildGrid(points, cellSize);
+            const lineColor = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)'; 
+            const dotColor = isDark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)';
+            
+            let i = 0; const batchSize = 250;
+            const drawConstBatch = () => {
+                const limit = Math.min(i + batchSize, points.length);
+                for(; i < limit; i++) {
+                    const p1 = points[i];
+                    const cx = Math.floor(p1.x / cellSize); const cy = Math.floor(p1.y / cellSize);
+                    ctx.beginPath(); ctx.strokeStyle = lineColor; ctx.lineWidth = 0.5;
+                    let connections = 0;
+                    for(let nx = cx - 1; nx <= cx + 1; nx++) {
+                        for(let ny = cy - 1; ny <= cy + 1; ny++) {
+                            const neighbors = grid.get(nx + ',' + ny);
+                            if(!neighbors) continue;
+                            for(let j = 0; j < neighbors.length; j++) {
+                                const p2 = neighbors[j];
+                                if(p1 === p2) continue;
+                                if((p1.x - p2.x)**2 + (p1.y - p2.y)**2 < maxDistSq) {
+                                    ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); connections++;
+                                }
+                            }
+                            if(connections > 3) break; 
+                        }
+                        if(connections > 3) break;
+                    }
+                    ctx.stroke();
+                    if(connections > 0 || Math.random() > 0.8) {
+                        ctx.beginPath(); ctx.fillStyle = dotColor;
+                        ctx.arc(p1.x, p1.y, Math.random() * (connectionRadius/2) + 0.5, 0, Math.PI*2); ctx.fill();
+                    }
+                }
+                updateProgress(i, points.length, drawConstBatch);
+            }; drawConstBatch();
+        }
+
+        function renderZigzag(points, size, isDark) {
+            statusLabel.innerText = "Đang đi nét Phác Thảo Cấu Trúc...";
+            progressBar.style.width = '0%';
+            
+            // Tính lại Grid size dựa vào scale hiện tại để sort không bị gãy nét khi lên 8k
+            let blockSize = Math.max(20, size * 5);
+
+            points.sort((a, b) => {
+                const bx = Math.floor(a.x / blockSize) - Math.floor(b.x / blockSize);
+                if (bx !== 0) return bx; return a.y - b.y;
+            });
+
+            ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)';
+            ctx.lineWidth = Math.min(1.0, size / 3);
+            ctx.beginPath();
+            if(points.length > 0) ctx.moveTo(points[0].x, points[0].y);
+
+            let i = 1; const drawBatch = () => {
+                const limit = Math.min(i + 1500, points.length);
+                const maxLineSq = (size * 12) * (size * 12);
+                for(; i < limit; i++) {
+                    const dx = points[i].x - points[i-1].x; const dy = points[i].y - points[i-1].y;
+                    if(dx*dx + dy*dy < maxLineSq) ctx.lineTo(points[i].x, points[i].y);
+                    else ctx.moveTo(points[i].x, points[i].y);
+                }
+                ctx.stroke();
+                ctx.beginPath(); 
+                if(i < points.length) ctx.moveTo(points[i-1].x, points[i-1].y);
+                updateProgress(i, points.length, drawBatch);
+            }
+            drawBatch();
+        }
+
+        function buildGrid(points, cellSize) {
+            const grid = new Map();
+            for(let i = 0; i < points.length; i++) {
+                const p = points[i];
+                const cx = Math.floor(p.x / cellSize); const cy = Math.floor(p.y / cellSize);
+                const key = cx + ',' + cy;
+                if(!grid.has(key)) grid.set(key, []);
+                grid.get(key).push(p);
+            }
+            return grid;
+        }
+
+        function updateProgress(current, total, callback) {
+            const progress = Math.round((current / total) * 100);
+            progressBar.style.width = progress + '%';
+            progressText.innerText = `${progress}%`;
+            if(current < total) requestAnimationFrame(callback);
+            else finishProcessing();
+        }
+
+        function finishProcessing() {
+            isProcessing = false;
+            processBtn.disabled = false;
+            statusLabel.innerText = "Hoàn tất Kiến Tạo V8!";
+            modeDisplay.innerText = "KẾT QUẢ ĐÃ SẴN SÀNG";
+            setTimeout(() => {
+                progressContainer.classList.add('hidden');
+                progressBar.style.width = '0%';
+            }, 3000);
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            if(!originalImg) { alert("Vui lòng tải ảnh lên trước!"); return; }
+            const is8K = enable8KInput.checked;
+            const prefix = is8K ? 'alien_v8_8K_UHD_' : 'alien_v8_';
+            
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = `${prefix}${shapeTypeInput.value}_${Date.now()}.png`;
+                link.href = url;
+                link.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        });
+
+        downloadTxtBtn.addEventListener('click', () => {
+            if(!globalAsciiText) { alert("Hãy chạy bộ kết xuất ASCII trước khi tải về."); return; }
+            const blob = new Blob([globalAsciiText], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `alien_ascii_${Date.now()}.txt`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+        });
+
+    </script>
+</body>
+</html>

@@ -10,26 +10,29 @@
             background-color: #050505;
             color: #ffffff;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
         }
         .canvas-area {
             background: #111;
             background-image: radial-gradient(#222 1px, transparent 1px);
             background-size: 20px 20px;
-            min-height: 400px;
+            min-height: 500px;
             display: flex;
             align-items: center;
             justify-content: center;
             border: 1px solid #333;
             border-radius: 8px;
-            overflow: auto;
+            overflow: hidden;
             position: relative;
         }
         canvas {
             box-shadow: 0 0 50px rgba(0,0,0,0.9);
             max-width: 100%;
+            max-height: 80vh;
             height: auto !important;
             background-color: white;
-            transition: all 0.3s ease;
+            transition: opacity 0.3s ease;
+            cursor: crosshair;
         }
         .control-panel {
             background: rgba(15, 15, 15, 0.95);
@@ -73,6 +76,30 @@
             color: #fff;
             font-weight: normal;
         }
+        /* Tâm điều khiển Xoắn ốc */
+        #centerTarget {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border: 2px solid #c084fc;
+            background: rgba(192, 132, 252, 0.2);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px rgba(192, 132, 252, 0.5);
+            z-index: 20;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #centerTarget::after {
+            content: '';
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -94,11 +121,10 @@
 
                 <div>
                     <label class="block text-[10px] uppercase tracking-widest text-emerald-500 font-bold mb-2">Dạng thức nghệ thuật</label>
-                    <select id="shapeType" class="w-full focus:ring-1 focus:ring-emerald-500 outline-none transition-all">
-                        
+                    <select id="shapeType" class="w-full focus:ring-1 focus:ring-emerald-500 outline-none transition-all mb-2">
                         <optgroup label="🎨 HỆ THỐNG THẨM MỸ (V8)">
                             <option value="ascii">🔠 Ký Tự Nguyên Khối (ASCII Matrix)</option>
-                            <option value="spiral">🌀 Xoắn Ốc Không Gian (Halftone Spiral)</option>
+                            <option value="spiral" selected>🌀 Xoắn Ốc Không Gian (Halftone Spiral)</option>
                         </optgroup>
 
                         <optgroup label="🌐 Mạng Lưới (Continuous)">
@@ -114,6 +140,16 @@
                             <option value="organic">Sợi Hữu Cơ (Organic)</option>
                         </optgroup>
                     </select>
+                    
+                    <!-- Bảng điều khiển riêng cho Spiral -->
+                    <div id="spiralControls" class="hidden bg-gray-900/50 p-3 rounded border border-gray-800 mt-2">
+                        <label class="block text-[9px] uppercase tracking-widest text-purple-400 mb-2 font-bold">Kiến trúc Xoắn</label>
+                        <select id="spiralSubType" class="w-full bg-black border border-gray-700 text-gray-300 text-[10px] p-1.5 rounded outline-none mb-2">
+                            <option value="spiral">Xoắn Ốc Liên Tục (Classic)</option>
+                            <option value="concentric">Vòng Tròn Đồng Tâm (Rings)</option>
+                        </select>
+                        <p class="text-[8px] text-gray-500 leading-tight">* Click và kéo chuột trực tiếp trên ảnh Preview để thay đổi vị trí của tâm xoắn.</p>
+                    </div>
                 </div>
 
                 <div id="signatureContainer" class="hidden pt-2 border-t border-gray-800">
@@ -132,7 +168,7 @@
 
                 <div>
                     <div class="flex justify-between mb-2">
-                        <label id="sizeLabel" class="text-[10px] uppercase tracking-widest text-gray-300">Độ dày / Kích thước</label>
+                        <label id="sizeLabel" class="text-[10px] uppercase tracking-widest text-gray-300">Khoảng cách vòng xoắn</label>
                         <span id="dotSizeVal" class="text-xs font-mono text-emerald-400">4.0</span>
                     </div>
                     <input type="range" id="dotSize" min="0.5" max="40" step="0.5" value="4.0" class="w-full">
@@ -156,7 +192,7 @@
                     <label for="invertColor" class="text-[10px] uppercase tracking-widest cursor-pointer text-gray-400">Đảo ngược Nền (Dark Mode)</label>
                 </div>
 
-                <!-- CÔNG TẮC 8K MỚI THÊM VÀO -->
+                <!-- CÔNG TẮC 8K -->
                 <div class="pt-4 border-t border-gray-800">
                     <div class="flex items-start space-x-3 bg-purple-900/20 p-3 rounded border border-purple-500/30 transition hover:bg-purple-900/30">
                         <input type="checkbox" id="enable8K" class="w-4 h-4 mt-0.5 bg-black border-purple-500 rounded focus:ring-0 text-purple-500 cursor-pointer">
@@ -198,9 +234,11 @@
         </div>
 
         <!-- MAIN CANVAS DISPLAY -->
-        <div class="lg:col-span-3 space-y-4 flex flex-col">
+        <div class="lg:col-span-3 space-y-4 flex flex-col relative">
             <div class="canvas-area p-4 flex-grow" id="canvasWrapper">
                 <canvas id="mainCanvas"></canvas>
+                <!-- Target Indicator for Spiral Center -->
+                <div id="centerTarget" class="hidden"></div>
             </div>
             <div class="flex justify-between text-[10px] text-gray-500 uppercase tracking-[0.2em] font-mono">
                 <span id="resDisplay">Khởi tạo Engine V8...</span>
@@ -213,6 +251,9 @@
     <script>
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        
+        // UI Elements
         const imageInput = document.getElementById('imageInput');
         const processBtn = document.getElementById('processBtn');
         const downloadBtn = document.getElementById('downloadBtn');
@@ -225,6 +266,7 @@
         const sizeLabel = document.getElementById('sizeLabel');
         const modeDisplay = document.getElementById('modeDisplay');
 
+        // Inputs
         const dotCountInput = document.getElementById('dotCount');
         const dotSizeInput = document.getElementById('dotSize');
         const contrastInput = document.getElementById('contrast');
@@ -232,14 +274,24 @@
         const invertColorInput = document.getElementById('invertColor');
         const enable8KInput = document.getElementById('enable8K');
         
+        // Modules
         const signatureContainer = document.getElementById('signatureContainer');
         const sigImageInput = document.getElementById('sigImageInput');
+        const spiralControls = document.getElementById('spiralControls');
+        const spiralSubTypeInput = document.getElementById('spiralSubType');
+        const centerTarget = document.getElementById('centerTarget');
 
+        // State
         let originalImg = null;
         let sigCanvasBlack = null;
         let sigCanvasWhite = null;
         let isProcessing = false;
         let globalAsciiText = ""; 
+        
+        // Spiral State
+        let spiralCx = 0.5; // Normalized center X (0 to 1)
+        let spiralCy = 0.5; // Normalized center Y (0 to 1)
+        let isDraggingCenter = false;
         
         const continuousModes = ['plexus', 'zigzag', 'constellation'];
         const specialArtModes = ['ascii', 'spiral']; 
@@ -253,12 +305,24 @@
         bindSlider(dotSizeInput, 'dotSizeVal');
         bindSlider(contrastInput, 'contrastVal');
 
+        // Toggle UI logic
         shapeTypeInput.addEventListener('change', () => {
             const val = shapeTypeInput.value;
             
+            // Signature UI
             if (val === 'binary') signatureContainer.classList.remove('hidden');
             else signatureContainer.classList.add('hidden');
 
+            // Spiral UI
+            if (val === 'spiral') {
+                spiralControls.classList.remove('hidden');
+                updateTargetUIPosition();
+            } else {
+                spiralControls.classList.add('hidden');
+                centerTarget.classList.add('hidden');
+            }
+
+            // ASCII UI
             if (val === 'ascii') {
                 sizeLabel.innerText = "Kích thước Ký Tự";
                 downloadTxtBtn.classList.remove('hidden');
@@ -266,15 +330,71 @@
             } else {
                 downloadTxtBtn.classList.add('hidden');
                 downloadBtn.classList.add('col-span-2');
+                
                 if (val === 'binary') sizeLabel.innerText = "Kích thước Chữ ký";
                 else if (continuousModes.includes(val)) sizeLabel.innerText = "Bán kính nối";
-                else if (val === 'spiral') sizeLabel.innerText = "Khoảng cách vòng xoắn";
+                else if (val === 'spiral') sizeLabel.innerText = "Khoảng cách vòng";
                 else sizeLabel.innerText = "Kích thước hình học";
             }
         });
 
+        // Dragging Logic for Spiral Center
+        const updateCenterFromEvent = (e) => {
+            if (shapeTypeInput.value !== 'spiral' || !originalImg) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            
+            // Touch support
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+
+            let x = clientX - rect.left;
+            let y = clientY - rect.top;
+
+            // Clamp values
+            x = Math.max(0, Math.min(x, rect.width));
+            y = Math.max(0, Math.min(y, rect.height));
+
+            spiralCx = x / rect.width;
+            spiralCy = y / rect.height;
+
+            updateTargetUIPosition();
+        };
+
+        const updateTargetUIPosition = () => {
+            if(shapeTypeInput.value !== 'spiral' || !originalImg) {
+                centerTarget.classList.add('hidden');
+                return;
+            }
+            centerTarget.classList.remove('hidden');
+            
+            const rect = canvas.getBoundingClientRect();
+            const wrapperRect = canvasWrapper.getBoundingClientRect();
+
+            const domX = rect.left - wrapperRect.left + (rect.width * spiralCx);
+            const domY = rect.top - wrapperRect.top + (rect.height * spiralCy);
+
+            centerTarget.style.left = `${domX}px`;
+            centerTarget.style.top = `${domY}px`;
+        };
+
         shapeTypeInput.dispatchEvent(new Event('change'));
 
+        // Event Listeners for Dragging
+        canvas.addEventListener('mousedown', (e) => { isDraggingCenter = true; updateCenterFromEvent(e); });
+        canvas.addEventListener('mousemove', (e) => { if (isDraggingCenter) updateCenterFromEvent(e); });
+        window.addEventListener('mouseup', () => { isDraggingCenter = false; });
+        
+        canvas.addEventListener('touchstart', (e) => { isDraggingCenter = true; updateCenterFromEvent(e); }, {passive: true});
+        canvas.addEventListener('touchmove', (e) => { if (isDraggingCenter) { e.preventDefault(); updateCenterFromEvent(e); } }, {passive: false});
+        window.addEventListener('touchend', () => { isDraggingCenter = false; });
+        window.addEventListener('resize', updateTargetUIPosition);
+
+        // Load Image
         imageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -294,12 +414,17 @@
                     ctx.drawImage(img, 0, 0);
                     ctx.globalAlpha = 1.0;
                     modeDisplay.innerText = "ĐÃ NẠP DỮ LIỆU. SẴN SÀNG.";
+                    
+                    // Reset center
+                    spiralCx = 0.5; spiralCy = 0.5;
+                    setTimeout(updateTargetUIPosition, 100);
                 };
                 img.src = event.target.result;
             };
             reader.readAsDataURL(file);
         });
 
+        // Signature Extraction
         sigImageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -361,6 +486,7 @@
             alert("Đã trích xuất nét chữ ký chuẩn xác!");
         }
 
+        // Draw Discrete Shapes
         function drawShape(x, y, size, type, isDark) {
             ctx.save();
             ctx.translate(x, y);
@@ -392,6 +518,7 @@
             ctx.restore();
         }
 
+        // Main Process Trigger
         processBtn.addEventListener('click', async () => {
             if (!originalImg || isProcessing) return;
             startProcessing();
@@ -410,6 +537,7 @@
             const isCircle = document.getElementById('circleMask').checked;
             const isDark = invertColorInput.checked;
             const is8K = enable8KInput.checked;
+            const spiralSubType = spiralSubTypeInput.value;
 
             // Xử lý Tính toán Scale 8K
             let w = originalImg.naturalWidth;
@@ -423,9 +551,7 @@
                 h = Math.floor(h * scale);
             }
 
-            // Tự động scale các thông số để giữ nguyên tỷ lệ nghệ thuật trên file độ phân giải lớn
             const finalSize = size * scale;
-            // Scale mật độ hạt, giới hạn max 1.5 triệu điểm để tránh treo trình duyệt
             const finalCount = is8K ? Math.min(Math.floor(count * scale * scale), 1500000) : count;
 
             modeDisplay.innerText = `V8: ${shapeType.toUpperCase()} ${is8K ? '[8K UHD]' : ''}`;
@@ -447,7 +573,7 @@
             ctx.fillRect(0, 0, w, h);
 
             if (specialArtModes.includes(shapeType)) {
-                runSpecialArtModes(shapeType, w, h, imgData, finalSize, contrast, isDark, finalCount);
+                runSpecialArtModes(shapeType, w, h, imgData, finalSize, contrast, isDark, spiralSubType);
                 return; 
             }
 
@@ -461,7 +587,8 @@
                     const rx = Math.random() * w; const ry = Math.random() * h;
                     if (isCircle && Math.sqrt((rx - centerX)**2 + (ry - centerY)**2) > radiusLimit) continue;
 
-                    const px = Math.floor(rx); const py = Math.floor(ry);
+                    // Bitwise OR 0 thay cho Math.floor tối ưu tốc độ
+                    const px = rx | 0; const py = ry | 0;
                     const idx = (py * w + px) * 4;
                     const brightness = (imgData[idx]*0.299 + imgData[idx+1]*0.587 + imgData[idx+2]*0.114) / 255;
                     const prob = Math.pow(1 - brightness, contrast);
@@ -485,13 +612,13 @@
             collectBatch();
         }
 
-        function runSpecialArtModes(type, w, h, imgData, finalSize, contrast, isDark, finalCount) {
+        function runSpecialArtModes(type, w, h, imgData, finalSize, contrast, isDark, spiralSubType) {
             progressBar.style.width = '30%';
             statusLabel.innerText = `Đang kết xuất Nghệ Thuật: ${type.toUpperCase()}...`;
 
             setTimeout(() => {
                 if (type === 'ascii') renderAscii(w, h, imgData, finalSize, contrast, isDark);
-                else if (type === 'spiral') renderSpiral(w, h, imgData, finalSize, contrast, isDark);
+                else if (type === 'spiral') renderSpiral(w, h, imgData, finalSize, contrast, isDark, spiralSubType);
 
                 progressBar.style.width = '100%';
                 progressText.innerText = '100%';
@@ -499,6 +626,7 @@
             }, 100);
         }
 
+        // --- CORE RENDER: ASCII ---
         function renderAscii(w, h, imgData, size, contrast, isDark) {
             const chars = ['@', '&', '#', '%', '8', 'S', '*', '+', '=', '-', ':', '.', ' '];
             const fontSize = Math.max(6, Math.floor(size * 2)); 
@@ -518,8 +646,8 @@
                 const y = r * stepY;
                 for(let c = 0; c < cols; c++) {
                     const x = c * stepX;
-                    const sampleX = Math.floor(x + stepX/2);
-                    const sampleY = Math.floor(y + stepY/2);
+                    const sampleX = (x + stepX/2) | 0;
+                    const sampleY = (y + stepY/2) | 0;
                     const idx = (sampleY * w + sampleX) * 4;
                     const brightness = (imgData[idx]*0.299 + imgData[idx+1]*0.587 + imgData[idx+2]*0.114) / 255;
                     
@@ -538,48 +666,93 @@
             }
         }
 
-        function renderSpiral(w, h, imgData, size, contrast, isDark) {
-            const centerX = w/2; const centerY = h/2;
-            const maxRadius = Math.max(w, h) / 2 * 1.5;
+        // --- CORE RENDER: SPIRAL & CONCENTRIC ---
+        function renderSpiral(w, h, imgData, size, contrast, isDark, subType) {
+            // Tính toán Tâm Xoắn ốc dưa trên Input từ UI (Mặc định 0.5, 0.5)
+            const centerX = w * spiralCx; 
+            const centerY = h * spiralCy;
+            
+            // maxRadius phải đủ lớn để bao phủ các góc màn hình từ tâm lệch
+            const maxDistX = Math.max(centerX, w - centerX);
+            const maxDistY = Math.max(centerY, h - centerY);
+            const maxRadius = Math.sqrt(maxDistX*maxDistX + maxDistY*maxDistY) * 1.05;
+            
             const spacing = Math.max(3, size * 1.5); 
 
             ctx.strokeStyle = isDark ? 'white' : 'black';
             ctx.lineCap = 'round'; ctx.lineJoin = 'round';
             
-            let prevX = centerX; let prevY = centerY;
             let currentThickness = spacing * 0.5; 
             const maxThick = spacing * 0.85; 
             const minThick = Math.max(0.4, spacing * 0.08); 
 
-            let r = 0.1; let theta = 0;
+            const w4 = w * 4; // Tối ưu trước phép nhân
 
-            while (r < maxRadius) {
-                let angleStep = Math.min(0.5, 2.0 / Math.max(1, r));
-                theta += angleStep;
-                r = (spacing * theta) / (2 * Math.PI);
+            if (subType === 'spiral') {
+                // Thuật toán: Xoắn ốc liên tục (Bảo toàn thuật toán nối nét mịn gốc)
+                let prevX = centerX; let prevY = centerY;
+                let r = 0.1; let theta = 0;
 
-                let x = centerX + r * Math.cos(theta);
-                let y = centerY + r * Math.sin(theta);
+                while (r < maxRadius) {
+                    let angleStep = Math.min(0.5, 2.0 / Math.max(1, r));
+                    theta += angleStep;
+                    r = (spacing * theta) / (2 * Math.PI);
 
-                if (x >= 0 && x < w && y >= 0 && y < h) {
-                    const px = Math.floor(x); const py = Math.floor(y);
-                    const idx = (py * w + px) * 4;
-                    const brightness = (imgData[idx]*0.299 + imgData[idx+1]*0.587 + imgData[idx+2]*0.114) / 255;
-                    const weight = Math.pow(1 - brightness, contrast);
+                    let x = centerX + r * Math.cos(theta);
+                    let y = centerY + r * Math.sin(theta);
 
-                    let targetThickness = minThick + (maxThick - minThick) * weight;
-                    currentThickness += (targetThickness - currentThickness) * 0.1;
+                    // Khóa viền tối ưu tài nguyên, không render nếu ra ngoài
+                    if (x >= 0 && x < w && y >= 0 && y < h) {
+                        const px = x | 0; const py = y | 0; // Thay Math.floor bằng bitwise
+                        const idx = py * w4 + px * 4;
+                        const brightness = (imgData[idx]*0.299 + imgData[idx+1]*0.587 + imgData[idx+2]*0.114) / 255;
+                        const weight = Math.pow(1 - brightness, contrast);
 
-                    ctx.beginPath();
-                    ctx.moveTo(prevX, prevY);
-                    ctx.lineWidth = currentThickness;
-                    ctx.lineTo(x, y);
-                    ctx.stroke();
+                        let targetThickness = minThick + (maxThick - minThick) * weight;
+                        currentThickness += (targetThickness - currentThickness) * 0.1; // Smooth interpolate
+
+                        // Giữ nguyên đoạn code đảm bảo độ mượt như yêu cầu
+                        ctx.beginPath();
+                        ctx.moveTo(prevX, prevY);
+                        ctx.lineWidth = currentThickness;
+                        ctx.lineTo(x, y);
+                        ctx.stroke();
+                    }
+                    prevX = x; prevY = y;
                 }
-                prevX = x; prevY = y;
+            } else if (subType === 'concentric') {
+                // Thuật toán mới: Vòng tròn đồng tâm liên tiếp (Vẫn dùng thuật nối nét mịn)
+                for (let r = spacing; r < maxRadius; r += spacing) {
+                    let prevX = centerX + r;
+                    let prevY = centerY;
+                    let angleStep = Math.min(0.2, 3.0 / r); // Góc mượt tỷ lệ nghịch với bán kính
+                    
+                    for (let theta = 0; theta <= Math.PI * 2 + angleStep; theta += angleStep) {
+                        let x = centerX + r * Math.cos(theta);
+                        let y = centerY + r * Math.sin(theta);
+
+                        if (x >= 0 && x < w && y >= 0 && y < h) {
+                            const px = x | 0; const py = y | 0;
+                            const idx = py * w4 + px * 4;
+                            const brightness = (imgData[idx]*0.299 + imgData[idx+1]*0.587 + imgData[idx+2]*0.114) / 255;
+                            const weight = Math.pow(1 - brightness, contrast);
+
+                            let targetThickness = minThick + (maxThick - minThick) * weight;
+                            currentThickness += (targetThickness - currentThickness) * 0.15; // Smooth interpolate
+
+                            ctx.beginPath();
+                            ctx.moveTo(prevX, prevY);
+                            ctx.lineWidth = currentThickness;
+                            ctx.lineTo(x, y);
+                            ctx.stroke();
+                        }
+                        prevX = x; prevY = y;
+                    }
+                }
             }
         }
 
+        // --- CORE RENDER: NETWORKS ---
         function renderPlexus(points, connectionRadius, isDark) {
             statusLabel.innerText = "Đang dệt Mạng Lưới Thần Kinh...";
             progressBar.style.width = '0%';
@@ -595,7 +768,7 @@
                 ctx.beginPath();
                 for(; i < limit; i++) {
                     const p1 = points[i];
-                    const cx = Math.floor(p1.x / cellSize); const cy = Math.floor(p1.y / cellSize);
+                    const cx = (p1.x / cellSize) | 0; const cy = (p1.y / cellSize) | 0;
                     let connections = 0;
                     for(let nx = cx - 1; nx <= cx + 1; nx++) {
                         for(let ny = cy - 1; ny <= cy + 1; ny++) {
@@ -633,7 +806,7 @@
                 const limit = Math.min(i + batchSize, points.length);
                 for(; i < limit; i++) {
                     const p1 = points[i];
-                    const cx = Math.floor(p1.x / cellSize); const cy = Math.floor(p1.y / cellSize);
+                    const cx = (p1.x / cellSize) | 0; const cy = (p1.y / cellSize) | 0;
                     ctx.beginPath(); ctx.strokeStyle = lineColor; ctx.lineWidth = 0.5;
                     let connections = 0;
                     for(let nx = cx - 1; nx <= cx + 1; nx++) {
@@ -665,11 +838,10 @@
             statusLabel.innerText = "Đang đi nét Phác Thảo Cấu Trúc...";
             progressBar.style.width = '0%';
             
-            // Tính lại Grid size dựa vào scale hiện tại để sort không bị gãy nét khi lên 8k
             let blockSize = Math.max(20, size * 5);
 
             points.sort((a, b) => {
-                const bx = Math.floor(a.x / blockSize) - Math.floor(b.x / blockSize);
+                const bx = (a.x / blockSize | 0) - (b.x / blockSize | 0);
                 if (bx !== 0) return bx; return a.y - b.y;
             });
 
@@ -698,7 +870,7 @@
             const grid = new Map();
             for(let i = 0; i < points.length; i++) {
                 const p = points[i];
-                const cx = Math.floor(p.x / cellSize); const cy = Math.floor(p.y / cellSize);
+                const cx = (p.x / cellSize) | 0; const cy = (p.y / cellSize) | 0;
                 const key = cx + ',' + cy;
                 if(!grid.has(key)) grid.set(key, []);
                 grid.get(key).push(p);
@@ -706,6 +878,7 @@
             return grid;
         }
 
+        // --- UTILS ---
         function updateProgress(current, total, callback) {
             const progress = Math.round((current / total) * 100);
             progressBar.style.width = progress + '%';
@@ -725,6 +898,7 @@
             }, 3000);
         }
 
+        // Downloads
         downloadBtn.addEventListener('click', () => {
             if(!originalImg) { alert("Vui lòng tải ảnh lên trước!"); return; }
             const is8K = enable8KInput.checked;
